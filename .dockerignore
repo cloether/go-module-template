@@ -1,0 +1,13 @@
+# docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# other
+.DS_Store
+README.md
+
+/.idea
+/data
+/build
+/examples
