@@ -1,11 +1,11 @@
 // References:
 // 	https://github.com/google/exposure-notifications-server/blob/master/internal/logging/logger.go
-package logging
+package applog
 
 import (
 	"context"
 	"go.uber.org/zap"
-	_ "template/internal/env"
+	_ "template/env"
 )
 
 type loggerKey struct{}
@@ -26,17 +26,14 @@ func init() {
 }
 
 //noinspection GoUnusedExportedFunction
-func WithLogger(ctx context.Context, logger *zap.SugaredLogger) context.Context {
+func WithLogger(ctx context.Context, logger *Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, logger)
 }
 
+//noinspection GoUnusedExportedFunction
 func FromContext(ctx context.Context) *zap.SugaredLogger {
 	if logger, ok := ctx.Value(loggerKey{}).(*zap.SugaredLogger); ok {
 		return logger
 	}
 	return fallbackLogger
-}
-
-type Config struct {
-	LogLevel string `json:"log_level"`
 }

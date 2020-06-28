@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"template/internal/logging"
+	"template/internal/applog"
 	"time"
 )
 
@@ -21,15 +21,12 @@ type server struct {
 }
 
 func NewServer(ctx context.Context) *server {
-	logger := logging.FromContext(ctx)
-	return &server{
-		router: &mux.Router{},
-		log:    logger,
-	}
+	logger := applog.FromContext(ctx)
+	return &server{router: &mux.Router{}, log: logger}
 }
 
 func (s *server) Decode(_ http.ResponseWriter, r *http.Request, v interface{}) error {
-	return json.NewDecoder(r.Body).Decode(v)
+	return json.NewDecoder(r.Body).Decode(&v)
 }
 
 func (s *server) HandleTemplate(files ...string) http.HandlerFunc {
@@ -70,7 +67,7 @@ func (s *server) Respond(w http.ResponseWriter, _ *http.Request, data interface{
 }
 
 func (s *server) Run(ctx context.Context, addr string) {
-	logger := logging.FromContext(ctx)
+	logger := applog.FromContext(ctx)
 
 	logger.Debug("starting server on http://%s", addr)
 	srv := s.server(addr) // initialize server
@@ -111,20 +108,10 @@ func (s *server) routes() {
 func (s *server) server(addr string) *http.Server {
 	s.routes() // registers routes
 	return &http.Server{
-		Addr:              addr,
-		Handler:           s.router, // Pass our instance of gorilla/mux in.
-		TLSConfig:         nil,
-		ReadTimeout:       time.Second * 15,
-		ReadHeaderTimeout: 0,
-		// Good practice to set timeouts to avoid Slowloris attacks.
-		// https://en.wikipedia.org/wiki/Slowloris_(computer_security)
-		WriteTimeout:   time.Second * 15,
-		IdleTimeout:    time.Second * 60,
-		MaxHeaderBytes: 0,
-		TLSNextProto:   nil,
-		ConnState:      nil,
-		ErrorLog:       nil,
-		BaseContext:    nil,
-		ConnContext:    nil,
+		Addr:         addr,
+		Handler:      s.router, // Pass our instance of gorilla/mux in.
+		ReadTimeout:  time.Second * 15,
+		WriteTimeout: time.Second * 15,
+		IdleTimeout:  time.Second * 60,
 	}
 }

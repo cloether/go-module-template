@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"template/internal/logging"
+	"template/internal/applog"
 )
 
 // Server Entry Point
 func main() {
-	log := logging.FromContext(context.Background())
+	log := applog.FromContext(context.Background())
 	log.Debug("Server")
 }
