@@ -1,12 +1,13 @@
-package main
+package server
 
 import (
 	"context"
-	"template/internal/applog"
+
+	"github.com/cloether/go-module-template/applog"
 )
 
-// Server Entry Point
-func main() {
+// Run is the Server Entry Point
+func Run() {
 	log := applog.FromContext(context.Background())
 	log.Debug("Server")
 }

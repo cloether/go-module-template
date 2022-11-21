@@ -1,18 +1,20 @@
-package main
+package server
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"go.uber.org/zap"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
-	"template/internal/applog"
 	"time"
+
+	"github.com/gorilla/mux"
+	"go.uber.org/zap"
+
+	"github.com/cloether/go-module-template/applog"
 )
 
 type server struct {
@@ -38,9 +40,7 @@ func (s *server) HandleTemplate(files ...string) http.HandlerFunc {
 		tplErr error
 	)
 	return func(w http.ResponseWriter, r *http.Request) {
-		init.Do(func() {
-			tpl, tplErr = template.ParseFiles(files...)
-		})
+		init.Do(func() { tpl, tplErr = template.ParseFiles(files...) })
 		if tplErr != nil {
 			http.Error(w, tplErr.Error(), http.StatusInternalServerError)
 			return
@@ -68,8 +68,8 @@ func (s *server) Respond(w http.ResponseWriter, _ *http.Request, data interface{
 
 func (s *server) Run(ctx context.Context, addr string) {
 	logger := applog.FromContext(ctx)
-
 	logger.Debug("starting server on http://%s", addr)
+
 	srv := s.server(addr) // initialize server
 
 	go func() { // run our server in a goroutine so that it does not block.
@@ -88,14 +88,15 @@ func (s *server) Run(ctx context.Context, addr string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	// Does not block if there no connections, but will otherwise wait until
-	// the timeout deadline.
+	// does not block if there are no connections,
+	// but will otherwise wait until the timeout deadline.
 	_ = srv.Shutdown(ctx)
 
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
+	// optionally, you could run srv.Shutdown in a goroutine and block on
 	// <-ctx.Done() if your application should wait for other services to
 	// finalize based on context cancellation.
 	_, _ = os.Stderr.Write([]byte("\b\b")) // Remove "^C" from output
+
 	logger.Debug("shutting down")
 	os.Exit(0) // exit with status code 0 for successful shutdown
 }

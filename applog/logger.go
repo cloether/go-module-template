@@ -1,7 +1,7 @@
 package applog
 
 import (
-	"github.com/cloether/go-module-template/applog"
+	"github.com/cloether/go-module-template/internal/applog"
 	"io"
 	"io/ioutil"
 	"log"
@@ -66,18 +66,19 @@ type Logger interface {
 	// Implementations may also call os.Exit() with a non-zero exit code.
 	Fatalf(format string, args ...interface{})
 
-	// V reports whether verbosity level l is at least the requested verbose level.
+	// V reports whether verbosity level l is at least the requested verbose
+	// level.
 	V(l int) bool
 }
 
-// SetLoggerV2 sets logger that is used in grpc to a V2 logger.
-// Not mutex-protected, should be called before any gRPC functions.
+// SetLogger sets logger that is used in applog to a logger.
+// Not mutex-protected, should be called before any functions.
 func SetLogger(l Logger) {
 	if _, ok := l.(*componentData); ok {
-		panic("cannot use component logger as grpclog logger")
+		panic("cannot use component logger as applog logger")
 	}
 	applog.Logger = l
-	applog.DepthLogger, _ = l.(applog.DepthLogger)
+	applog.DepthLogger, _ = l.(DepthLogger)
 }
 
 const (
@@ -118,13 +119,20 @@ func NewLogger(infoW, warningW, errorW io.Writer) Logger {
 // verbosity level.
 func NewLoggerWithVerbosity(infoW, warningW, errorW io.Writer, v int) Logger {
 	var m []*log.Logger
+
 	m = append(m, log.New(infoW, severityName[infoLog]+": ", log.LstdFlags))
+
 	m = append(m, log.New(io.MultiWriter(infoW, warningW),
-		severityName[warningLog]+": ", log.LstdFlags))
+		severityName[warningLog]+": ", log.LstdFlags),
+	)
+
 	// ew will be used for error and fatal.
 	ew := io.MultiWriter(infoW, warningW, errorW)
+
 	m = append(m, log.New(ew, severityName[errorLog]+": ", log.LstdFlags))
+
 	m = append(m, log.New(ew, severityName[fatalLog]+": ", log.LstdFlags))
+
 	return &loggerT{m: m, v: v}
 }
 
@@ -209,4 +217,29 @@ func (g *loggerT) Fatalf(format string, args ...interface{}) {
 
 func (g *loggerT) V(l int) bool {
 	return l <= g.v
+}
+
+// DepthLogger logs at a specified call frame. If a LoggerV2 also implements
+// DepthLogger, the below functions will be called with the appropriate stack
+// depth set for trivial functions the logger may ignore.
+//
+// This API is EXPERIMENTAL.
+type DepthLogger interface {
+	Logger
+
+	// InfoDepth logs to INFO log at the specified depth.
+	// Arguments are handled in the manner of fmt.Print.
+	InfoDepth(depth int, args ...interface{})
+
+	// WarningDepth logs to WARNING log at the specified depth.
+	// Arguments are handled in the manner of fmt.Print.
+	WarningDepth(depth int, args ...interface{})
+
+	// ErrorDepth logs to ERROR log at the specified depth.
+	// Arguments are handled in the manner of fmt.Print.
+	ErrorDepth(depth int, args ...interface{})
+
+	// FatalDepth logs to FATAL log at the specified depth.
+	// Arguments are handled in the manner of fmt.Print.
+	FatalDepth(depth int, args ...interface{})
 }

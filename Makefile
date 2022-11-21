@@ -1,10 +1,11 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
-envfile := ./.moolah.json  # TODO: env file is now yaml. Change to handle yaml files
+envfile := .moolah.json  # TODO: env file is now yaml. Change to handle yaml files
 
 .PHONY: help build rebuild cert start stop run logs local config coverage webhook graph_deps
 
-# help target adapted from: https://gist.github.com/prwhite/8168133#gistcomment-2278355
+# help target adapted from:
+# https://gist.github.com/prwhite/8168133#gistcomment-2278355
 
 TARGET_MAX_CHAR_NUM=20
 
@@ -17,14 +18,17 @@ start:
 	@echo "Starting Docker Services"
 	docker-compose up --detach
 	./build/post-start.sh
+
 build:
 	@echo "building application image"
 	docker-compose build app
 	@echo "build completed. exit=$?"
+
 rebuild:
 	@echo "building application image (--no-cache)"
 	docker-compose build --no-cache app
 	@echo "build completed. exit=$?"
+
 coverage:
 	go test -coverprofile data/coverage "$1?" && go tool cover -html=data/coverage
 
@@ -53,7 +57,7 @@ help:
 logs:
 	docker-compose logs --follow
 
-## Generate certificate priavte and public key
+## Generate certificate private and public key
 ## Stop services
 stop:
 	docker-compose down
