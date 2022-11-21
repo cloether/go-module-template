@@ -1,6 +1,6 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
-envfile := .moolah.json  # TODO: env file is now yaml. Change to handle yaml files
+envfile := .env.json  # TODO: env file is now yaml. Change to handle yaml files
 
 .PHONY: help build rebuild cert start stop run logs local config coverage webhook graph_deps
 

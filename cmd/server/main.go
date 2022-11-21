@@ -1,13 +1,9 @@
 package server
 
-import (
-	"context"
-
-	"github.com/cloether/go-module-template/applog"
-)
+import "go.uber.org/zap"
 
 // Run is the Server Entry Point
 func Run() {
-	log := applog.FromContext(context.Background())
-	log.Debug("Server")
+	logger := zap.SugaredLogger{}
+	logger.Debug("Server")
 }

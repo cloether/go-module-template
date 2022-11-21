@@ -13,25 +13,23 @@ import (
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
-
-	"github.com/cloether/go-module-template/applog"
 )
 
-type server struct {
+type Server struct {
 	router *mux.Router
 	log    *zap.SugaredLogger
 }
 
-func NewServer(ctx context.Context) *server {
-	logger := applog.FromContext(ctx)
-	return &server{router: &mux.Router{}, log: logger}
+func NewServer(_ context.Context) *Server {
+	logger := zap.SugaredLogger{}
+	return &Server{router: &mux.Router{}, log: &logger}
 }
 
-func (s *server) Decode(_ http.ResponseWriter, r *http.Request, v interface{}) error {
+func (s *Server) Decode(_ http.ResponseWriter, r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(&v)
 }
 
-func (s *server) HandleTemplate(files ...string) http.HandlerFunc {
+func (s *Server) HandleTemplate(files ...string) http.HandlerFunc {
 	// expensive setup when the handler is first hit to improve startup
 	// if handler isn't called, the work here is never done
 	var (
@@ -39,36 +37,42 @@ func (s *server) HandleTemplate(files ...string) http.HandlerFunc {
 		tpl    *template.Template
 		tplErr error
 	)
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		init.Do(func() { tpl, tplErr = template.ParseFiles(files...) })
+		init.Do(func() {
+			tpl, tplErr = template.ParseFiles(files...)
+		})
 		if tplErr != nil {
 			http.Error(w, tplErr.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		// use template
 		http.Error(w, tpl.Name(), http.StatusInternalServerError)
 	}
 }
 
-func (s *server) HandleIndex() http.HandlerFunc {
+func (s *Server) HandleIndex() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	}
 }
 
-func (s *server) Respond(w http.ResponseWriter, _ *http.Request, data interface{}, status int) {
+func (s *Server) Respond(w http.ResponseWriter, _ *http.Request, data interface{}, status int) {
 	w.WriteHeader(status)
+
 	if data != nil {
 		if err := json.NewEncoder(w).Encode(data); err != nil {
 			s.log.Error(err)
 		}
 	}
+
 	log.Println(http.StatusText(status))
 }
 
-func (s *server) Run(ctx context.Context, addr string) {
-	logger := applog.FromContext(ctx)
-	logger.Debug("starting server on http://%s", addr)
+func (s *Server) Run(ctx context.Context, addr string) {
+	//goland:noinspection HttpUrlsUsage
+	s.log.Debug("starting server on http://%s", addr)
 
 	srv := s.server(addr) // initialize server
 
@@ -85,7 +89,10 @@ func (s *server) Run(ctx context.Context, addr string) {
 	// Accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
 	// Create a deadline to wait for.
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		100*time.Millisecond,
+	)
 	defer cancel()
 
 	// does not block if there are no connections,
@@ -97,16 +104,16 @@ func (s *server) Run(ctx context.Context, addr string) {
 	// finalize based on context cancellation.
 	_, _ = os.Stderr.Write([]byte("\b\b")) // Remove "^C" from output
 
-	logger.Debug("shutting down")
+	s.log.Debug("shutting down")
 	os.Exit(0) // exit with status code 0 for successful shutdown
 }
 
-func (s *server) routes() {
+func (s *Server) routes() {
 	s.router.HandleFunc("/", s.HandleIndex()).Methods(http.MethodGet)
 	s.router.HandleFunc("/index.html", s.HandleTemplate("index.html"))
 }
 
-func (s *server) server(addr string) *http.Server {
+func (s *Server) server(addr string) *http.Server {
 	s.routes() // registers routes
 	return &http.Server{
 		Addr:         addr,
