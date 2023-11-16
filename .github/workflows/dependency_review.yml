@@ -1,0 +1,19 @@
+name: 'Dependency Review'
+
+on: [ push ]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+
+      # Configuration Options: https://github.com/actions/dependency-review-action/blob/main/README.md#configuration-options
+      # Examples: https://github.com/actions/dependency-review-action/blob/main/docs/examples.md
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
