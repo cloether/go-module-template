@@ -18,5 +18,5 @@ jobs:
       - name: Dependency Review
         uses: actions/dependency-review-action@v3
         with:
-          base-ref: main
-          head-ref: ${{ env.GITHUB_SHA }}
+          base_ref: main
+          head_ref: main
