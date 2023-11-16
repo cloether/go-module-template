@@ -3,6 +3,7 @@ module github.com/cloether/go-module-template
 go 1.19
 
 require (
+	github.com/spf13/cobra latest
 	github.com/gorilla/mux v1.7.4
 	go.uber.org/zap v1.15.0
 )
