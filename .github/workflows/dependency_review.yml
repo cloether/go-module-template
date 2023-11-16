@@ -19,3 +19,4 @@ jobs:
         uses: actions/dependency-review-action@v3
         with:
           base_ref: main
+          head_ref: ${{ env.GITHUB_SHA }}
