@@ -25,15 +25,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Default to the Dependency Review action arguments for base_ref/head_ref if they were provided.
+          # Fallback to the GitHub event pull_request base sha/head sha.
           BASE_REF="${{ steps.dependency_review.with.base_ref || github.event.pull_request.base.sha }}"
           HEAD_REF="${{ steps.dependency_review.with.head_ref || github.event.pull_request.head.sha }}"
-          REPO="${{ github.repository }}"
-          gh api \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "/repos/$REPO/dependency-graph/compare/$BASE_REF...$HEAD_REF" \
+          
+          # Get a diff of the dependencies between commits
+          # References: https://docs.github.com/en/rest/dependency-graph/dependency-review?apiVersion=2022-11-28#get-a-diff-of-the-dependencies-between-commits
+          gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/dependency-graph/compare/$BASE_REF...$HEAD_REF" \
             > "dependency-graph-compare-$BASE_REF-$HEAD_REF.json"
+          
+          # add filepath to environment and output for later artifact upload and later use by other actions
           echo "dependency_graph_results=dependency-graph-compare-$BASE_REF-$HEAD_REF.json" >> $GITHUB_ENV
+          echo "dependency_graph_results=dependency-graph-compare-$BASE_REF-$HEAD_REF.json" >> $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v3
         with:
