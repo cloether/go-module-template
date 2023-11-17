@@ -8,7 +8,18 @@ jobs:
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@v4
+
       # Configuration Options: https://github.com/actions/dependency-review-action/blob/main/README.md#configuration-options
       # Examples: https://github.com/actions/dependency-review-action/blob/main/docs/examples.md
       - name: Dependency Review
         uses: actions/dependency-review-action@v3
+
+      - name: Get Dependency Review
+        run: |
+          BASE_REF=${{ github.base_ref }}
+          HEAD_REF=${{ github.pull_request.head_ref }}
+          REPO=${{ github.repository }}
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/$REPO/dependency-graph/compare/$BASE_REF...$HEAD_REF"
