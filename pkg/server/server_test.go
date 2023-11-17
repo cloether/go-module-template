@@ -7,7 +7,7 @@ import (
 )
 
 func TestHandleAbout(t *testing.T) {
-	srv := NewServer(context.Background())
+	srv := New(context.Background())
 	srv.routes()
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
