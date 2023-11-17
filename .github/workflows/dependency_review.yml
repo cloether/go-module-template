@@ -8,7 +8,8 @@ permissions:
 jobs:
   dependency_review:
     runs-on: ubuntu-latest
-
+    outputs:
+      dependency_graph_results: ${{ steps.get_dependency_review.outputs.dependency_graph_results }}
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@v4
@@ -20,6 +21,7 @@ jobs:
         uses: actions/dependency-review-action@v3
 
       - name: Get Dependency Review
+        id: get_dependency_review
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -29,4 +31,11 @@ jobs:
           gh api \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "/repos/$REPO/dependency-graph/compare/$BASE_REF...$HEAD_REF"
+            "/repos/$REPO/dependency-graph/compare/$BASE_REF...$HEAD_REF" \
+            > "dependency-graph-compare-$BASE_REF-$HEAD_REF.json"
+          echo "dependency_graph_results=dependency-graph-compare-$BASE_REF-$HEAD_REF.json" >> $GITHUB_ENV
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: dependency_graph_results
+          path: ${{ env.dependency_graph_results }}
