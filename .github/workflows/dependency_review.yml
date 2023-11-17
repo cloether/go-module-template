@@ -23,8 +23,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          BASE_REF="${{ jobs.dependency_review.steps[dependency_review].with.base_ref || github.base_ref }}"
-          HEAD_REF="${{ jobs.dependency_review.steps[dependency_review].with.head_ref || github.pull_request.head_ref }}"
+          BASE_REF="${{ steps.dependency_review.with.base_ref || github.base_ref }}"
+          HEAD_REF="${{ steps.dependency_review.with.head_ref || github.pull_request.head_ref }}"
           REPO="${{ github.repository }}"
           gh api \
             -H "Accept: application/vnd.github+json" \
