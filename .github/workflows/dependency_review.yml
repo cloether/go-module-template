@@ -12,6 +12,3 @@ jobs:
       # Examples: https://github.com/actions/dependency-review-action/blob/main/docs/examples.md
       - name: Dependency Review
         uses: actions/dependency-review-action@v3
-        with:
-          base_ref: main
-          head_ref: main
