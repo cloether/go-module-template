@@ -25,6 +25,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          printenv
+          
           # Default to the Dependency Review action arguments for base_ref/head_ref if they were provided.
           # Fallback to the GitHub event pull_request base sha/head sha.
           BASE_REF="${{ steps.dependency_review.with.base_ref || github.event.pull_request.base.sha }}"
