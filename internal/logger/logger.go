@@ -36,6 +36,6 @@ func createLogger(path string) (*DefaultLogger, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger := log.New(file, "Hydra ", log.Lshortfile)
+	logger := log.New(file, "main ", log.Lshortfile)
 	return &DefaultLogger{filename: path, Logger: logger}, nil
 }

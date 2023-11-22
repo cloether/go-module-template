@@ -3,26 +3,66 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
+	"github.com/cloether/go-module-template/internal/env"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
 
 type Server struct {
+	addr   string
+	port   uint16
 	router *mux.Router
 	log    *zap.SugaredLogger
 }
 
-func NewServer(_ context.Context) *Server {
+func New(ctx context.Context, options ...Option) *Server {
+	// create default server
 	logger := zap.SugaredLogger{}
-	return &Server{router: &mux.Router{}, log: &logger}
+	server := &Server{
+		router: &mux.Router{},
+		log:    &logger,
+	}
+
+	server.log.With("starting server",
+		"environment", env.FromContextWithDefault(ctx, "development"))
+
+	// loop through each option
+	for _, option := range options {
+		// call the option giving the instantiated *Server as the argument
+		option(server)
+	}
+
+	environment := env.FromContextWithDefault(ctx, "development")
+
+	server.log.With("starting server", "addr", server.addr, "port", server.port, "environment", environment)
+
+	return server
+}
+
+func (s *Server) Addr() string {
+	return s.addr
+}
+
+func (s *Server) SetAddr(addr string) {
+	s.addr = addr
+}
+
+func (s *Server) Port() uint16 {
+	return s.port
+}
+
+func (s *Server) SetPort(port uint16) {
+	s.port = port
 }
 
 func (s *Server) Decode(_ http.ResponseWriter, r *http.Request, v interface{}) error {
@@ -70,14 +110,40 @@ func (s *Server) Respond(w http.ResponseWriter, _ *http.Request, data interface{
 	log.Println(http.StatusText(status))
 }
 
+// Serve is the Server Entry Point
+func (s *Server) Serve(ctx context.Context, version string) {
+	s.log.With("server", "version", version)
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	// trap ctrl+c and call cancel on the context
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	defer func() {
+		signal.Stop(c)
+		cancel()
+	}()
+
+	go func() {
+		select {
+		case <-c:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+
+	// run the command
+	s.Run(ctx, version)
+}
+
 func (s *Server) Run(ctx context.Context, addr string) {
 	//goland:noinspection HttpUrlsUsage
-	s.log.Debug("starting server on http://%s", addr)
+	s.log.With("starting server", "addr", "http://%s")
 
 	srv := s.server(addr) // initialize server
 
 	go func() { // run our server in a goroutine so that it does not block.
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()

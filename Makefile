@@ -1,8 +1,8 @@
-mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
-envfile := .env.json  # TODO: env file is now yaml. Change to handle yaml files
+makefile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(notdir $(patsubst %/,%,$(dir $(makefile_path))))
+envfile := .env
 
-.PHONY: help build rebuild cert start stop run logs local config coverage webhook graph_deps
+.PHONY: help build build-container rebuild-container start-container stop-container run logs test_coverage
 
 # help target adapted from:
 # https://gist.github.com/prwhite/8168133#gistcomment-2278355
@@ -10,7 +10,7 @@ envfile := .env.json  # TODO: env file is now yaml. Change to handle yaml files
 TARGET_MAX_CHAR_NUM=20
 
 ## Start the services
-start:
+start-container:
 	@echo "Pulling images from Docker Hub"
 	docker-compose pull
 	@echo "Building Application Image"
@@ -19,18 +19,22 @@ start:
 	docker-compose up --detach
 	./build/post-start.sh
 
-build:
+build-container:
 	@echo "building application image"
 	docker-compose build app
 	@echo "build completed. exit=$?"
 
-rebuild:
+rebuild-container:
 	@echo "building application image (--no-cache)"
 	docker-compose build --no-cache app
 	@echo "build completed. exit=$?"
 
-coverage:
+test_coverage:
 	go test -coverprofile data/coverage "$1?" && go tool cover -html=data/coverage
+
+## build the app
+build:
+	go build -i -v -ldflags="-X main.version=$(git describe --always --long --dirty)"
 
 ## Start the services locally
 run:
@@ -59,7 +63,7 @@ logs:
 
 ## Generate certificate private and public key
 ## Stop services
-stop:
+stop-container:
 	docker-compose down
 	docker volume rm $(current_dir)_{app,server}_node_modules 2>/dev/null || true
 

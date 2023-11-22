@@ -115,4 +115,16 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
+# jetbrains
+.idea
 /.idea
+
+# Go Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# snyk output and cache files
+snyk_*.json
+.dccache

@@ -1,3 +1,19 @@
+# References:
+# - https://docs.docker.com/engine/reference/builder/#dockerignore-file
+# - https://docs.docker.com/build/building/context/#dockerignore-files
+
+# git
+.git/
+
+# github
+.github/
+
+# visual studio code
+.vscode/
+
+# documentation
+docs/
+
 # docker
 Dockerfile
 docker-compose.yml
@@ -7,7 +23,10 @@ docker-compose.yml
 .DS_Store
 README.md
 
+# jetbrains
 /.idea
+
+# project
 /data
 /build
 /examples
